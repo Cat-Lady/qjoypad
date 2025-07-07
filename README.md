@@ -377,10 +377,11 @@ centered when it is all the way to one direction or the other.
 #### KeyboardAndMouse mode
 
 This mode works by merging functions of mouse control mode
-(any subtype) and keryboard events control. The only difference
+(any subtype) and keyboard events control. The only difference
 is that virtual keypresses are executed on reaching the red
-marker on axis (to keep compatibility with mouse movement starting
-on the blue marker, and reaching max speed on the red marker).
+marker/tab on axis (to keep compatibility with mouse movement
+starting on the blue marker, and reaching max speed on the red
+marker/tab).
 
 The idea is that in some applications, you can use mouse emulation
 for precise aiming, while further on the axis (or even at extreme
