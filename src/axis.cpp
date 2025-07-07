@@ -35,7 +35,7 @@ bool Axis::read(QTextStream &stream) {
     for (QStringList::Iterator it = words.begin(); it != words.end(); ++it) {
         QString word = *it;
 
-        // Usuń dwukropki na końcu tokenów (np. "axis", "3:")
+        // Remove colons at the end of tokens (e.g. "axis", "3:")
         if (word.endsWith(":")) {
             word.chop(1);
         }
@@ -156,8 +156,8 @@ bool Axis::read(QTextStream &stream) {
             mode = KeyboardAndMouseVertRev;
         }
         else {
-            // Nieznane słowo - zamiast zwracać false, tylko ignoruj i kontynuuj
-            // Możesz też wyświetlić debug info, jeśli chcesz:
+            // Unknown word - instead of returning false, just ignore and continue
+            // You can also output debug info here if you want:
             // qDebug() << "Unrecognized token in axis config:" << word;
         }
     }
@@ -173,7 +173,7 @@ void Axis::timerCalled() {
 }
 
 void Axis::write(QTextStream &stream) {
-    // zapis zwykłych parametrów osi:
+    // Save regular axis parameters:
     stream << "Axis " << (index + 1) << ": ";
 
     switch (interpretation) {
@@ -193,9 +193,9 @@ void Axis::write(QTextStream &stream) {
            << "maxSpeed " << maxSpeed << ", "
            << "tCurve " << transferCurve;
 
-    // dopiszemy klawisze i tryb, jeśli pasują
+    // Add keys and mode if applicable
 
-    // Zapis klawiszy +key / -key albo +mouse / -mouse dla trybów klawiatury i klawiatura+mysz
+    // Save keys +key / -key or +mouse / -mouse for keyboard and keyboard+mouse modes
     if (mode == Keyboard ||
         mode == KeyboardAndMouseHor ||
         mode == KeyboardAndMouseVert ||
@@ -207,7 +207,7 @@ void Axis::write(QTextStream &stream) {
                << (nuseMouse ? "-mouse " : "-key ") << nkeycode;
     }
 
-    // Zapis trybu w postaci nazwy (do łatwego odczytu)
+    // Save mode as string (for easy reading)
     switch (mode) {
         case Keyboard:
             stream << ", keyboard";
@@ -403,7 +403,7 @@ void Axis::adjustGradient() {
 void Axis::move(bool press) {
     FakeEvent e;
 
-    // Obsługa klawiatury i myszy równolegle w trybach KeyboardAndMouse*
+    // Handle keyboard and mouse simultaneously in KeyboardAndMouse* modes
 //    bool mouseMoveActive = false;
     bool keyboardPress = false;
 
@@ -414,8 +414,8 @@ void Axis::move(bool press) {
         mode == KeyboardAndMouseHorRev ||
         mode == KeyboardAndMouseVertRev
     ) {
-        // obsługa klawiszy:
-        if (isDown == press && mode == Keyboard) return; // zapobiega powtórzeniom
+        // handle keys:
+        if (isDown == press && mode == Keyboard) return; // prevent repeats
         if (mode == Keyboard) {
             if (state != 0) {
                 useMouse = (state > 0) ? puseMouse : nuseMouse;
@@ -433,12 +433,12 @@ void Axis::move(bool press) {
             return;
         }
         else {
-            // Tryby KeyboardAndMouse* - ruch myszy + klawisze
+            // KeyboardAndMouse* modes - mouse movement + keys
             keyboardPress = press && (abs(state) >= xZone);
 
-            // Obsługa klawiszy:
+            // Handle keys:
             if (keyboardPress) {
-                // jeśli klawisz nie jest wciśnięty, naciśnij
+                // if key not pressed, press it
                 if (!isDown) {
                     e.type = ( (state > 0) ? (puseMouse ? FakeEvent::MouseDown : FakeEvent::KeyDown) :
                               (nuseMouse ? FakeEvent::MouseDown : FakeEvent::KeyDown));
@@ -449,7 +449,7 @@ void Axis::move(bool press) {
                 }
             }
             else {
-                // jeśli klawisz powinien być zwolniony
+                // if key should be released
                 if (isDown) {
                     e.type = ( (state > 0) ? (puseMouse ? FakeEvent::MouseUp : FakeEvent::KeyUp) :
                               (nuseMouse ? FakeEvent::MouseUp : FakeEvent::KeyUp));
@@ -459,7 +459,7 @@ void Axis::move(bool press) {
                 }
             }
 
-            // Obsługa myszy:
+            // Handle mouse:
 
             int dist = 0;
             if (gradient) {
@@ -498,7 +498,7 @@ void Axis::move(bool press) {
             e.move.x = 0;
             e.move.y = 0;
 
-            // Ustawienie ruchu myszy w zależności od trybu:
+            // Set mouse movement depending on mode:
             switch (mode) {
                 case MousePosVert:
                     e.move.y = dist;
@@ -534,13 +534,13 @@ void Axis::move(bool press) {
 //                mouseMoveActive = true;
             }
 
-            // Klawiatura została obsłużona powyżej (keyboardPress/isDown)
+            // Keyboard handling was done above (keyboardPress/isDown)
 
             return;
         }
     }
     else if (mode == MousePosVert || mode == MouseNegVert || mode == MousePosHor || mode == MouseNegHor) {
-        // Stare tryby tylko myszy
+        // Old mouse-only modes
         int dist = 0;
         if (gradient) {
             const int absState = abs(state);
@@ -587,16 +587,12 @@ void Axis::move(bool press) {
             default: break;
         }
 
-        if (e.move.x != 0 || e.move.y != 0)
+        if (e.move.x != 0 || e.move.y != 0) {
             sendevent(e);
+        }
+        return;
     }
-    else if (mode == Keyboard) {
-        // Stare tryby tylko klawiatury
-        if (isDown == press) return;
-        isDown = press;
-        FakeEvent e;
-        e.type = (useMouse ? (press ? FakeEvent::MouseDown : FakeEvent::MouseUp) : (press ? FakeEvent::KeyDown : FakeEvent::KeyUp));
-        e.keycode = (state > 0) ? pkeycode : nkeycode;
-        sendevent(e);
-    }
+
+    // If mode is unknown, do nothing
 }
+
