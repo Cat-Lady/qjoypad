@@ -108,6 +108,7 @@ AxisEdit::AxisEdit( Axis* ax )
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
     v->addWidget(buttonBox);
 
+    // Initialize dialog controls to current axis state
     gradientChanged( axis->interpretation );
     modeChanged( axis->mode );
     transferCurveChanged( axis->transferCurve );
@@ -116,11 +117,11 @@ AxisEdit::AxisEdit( Axis* ax )
 
 void AxisEdit::show() {
     QDialog::show();
-    setFixedSize(size());
+    setFixedSize(size());  // Fix dialog size to prevent resizing
 }
 
 void AxisEdit::setState( int val ) {
-    slider->setValue( val );
+    slider->setValue( val );  // Update slider position/value
 }
 
 void AxisEdit::gradientChanged( int index ) {

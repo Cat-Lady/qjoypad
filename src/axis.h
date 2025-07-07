@@ -20,15 +20,15 @@ class Axis : public QObject {
 public:
     enum Interpretation { ZeroOne, Gradient, AbsolutePos };
 
-    // Dodane nowe tryby do rozszerzonej obsługi osi:
+    // Added new modes for extended axis handling:
     enum Mode {
         Keyboard,
         MousePosVert,
         MouseNegVert,
         MousePosHor,
         MouseNegHor,
-        KeyboardAndMouseHor,     // nowy tryb poziomego ruchu myszy + klawisze
-        KeyboardAndMouseVert,    // nowy tryb pionowego ruchu myszy + klawisze
+        KeyboardAndMouseHor,     // new mode: horizontal mouse movement + keys
+        KeyboardAndMouseVert,    // new mode: vertical mouse movement + keys
         KeyboardAndMouseHorRev,
         KeyboardAndMouseVertRev,
     };
