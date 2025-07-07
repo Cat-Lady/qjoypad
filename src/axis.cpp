@@ -33,35 +33,42 @@ bool Axis::read(QTextStream &stream) {
     float fval;
 
     for (QStringList::Iterator it = words.begin(); it != words.end(); ++it) {
-        if (*it == "maxspeed") {
+        QString word = *it;
+
+        // Usuń dwukropki na końcu tokenów (np. "axis", "3:")
+        if (word.endsWith(":")) {
+            word.chop(1);
+        }
+
+        if (word == "maxspeed") {
             ++it;
             if (it == words.end()) return false;
             val = (*it).toInt(&ok);
             if (ok && val >= 0 && val <= MAXMOUSESPEED) maxSpeed = val;
             else return false;
         }
-        else if (*it == "dzone") {
+        else if (word == "dzone") {
             ++it;
             if (it == words.end()) return false;
             val = (*it).toInt(&ok);
             if (ok && val >= 0 && val <= JOYMAX) dZone = val;
             else return false;
         }
-        else if (*it == "xzone") {
+        else if (word == "xzone") {
             ++it;
             if (it == words.end()) return false;
             val = (*it).toInt(&ok);
             if (ok && val >= 0 && val <= JOYMAX) xZone = val;
             else return false;
         }
-        else if (*it == "tcurve") {
+        else if (word == "tcurve") {
             ++it;
             if (it == words.end()) return false;
             val = (*it).toInt(&ok);
             if (ok && val >= 0 && val <= PowerFunction) transferCurve = val;
             else return false;
         }
-        else if (*it == "sens") {
+        else if (word == "sens") {
             ++it;
             if (it == words.end()) return false;
             fval = (*it).toFloat(&ok);
@@ -69,21 +76,21 @@ bool Axis::read(QTextStream &stream) {
                 sensitivity = fval;
             else return false;
         }
-        else if (*it == "+key") {
+        else if (word == "+key") {
             ++it;
             if (it == words.end()) return false;
             val = (*it).toInt(&ok);
             if (ok && val >= 0 && val <= MAXKEY) pkeycode = val;
             else return false;
         }
-        else if (*it == "-key") {
+        else if (word == "-key") {
             ++it;
             if (it == words.end()) return false;
             val = (*it).toInt(&ok);
             if (ok && val >= 0 && val <= MAXKEY) nkeycode = val;
             else return false;
         }
-        else if (*it == "+mouse") {
+        else if (word == "+mouse") {
             ++it;
             if (it == words.end()) return false;
             val = (*it).toInt(&ok);
@@ -93,7 +100,7 @@ bool Axis::read(QTextStream &stream) {
             }
             else return false;
         }
-        else if (*it == "-mouse") {
+        else if (word == "-mouse") {
             ++it;
             if (it == words.end()) return false;
             val = (*it).toInt(&ok);
@@ -103,56 +110,61 @@ bool Axis::read(QTextStream &stream) {
             }
             else return false;
         }
-        else if (*it == "zeroone") {
+        else if (word == "zeroone") {
             interpretation = ZeroOne;
             gradient = false;
             absolute = false;
         }
-        else if (*it == "absolute") {
+        else if (word == "absolute") {
             interpretation = AbsolutePos;
             gradient = true;
             absolute = true;
         }
-        else if (*it == "gradient") {
+        else if (word == "gradient") {
             interpretation = Gradient;
             gradient = true;
             absolute = false;
         }
-        else if (*it == "throttle+") {
+        else if (word == "throttle+") {
             throttle = 1;
         }
-        else if (*it == "throttle-") {
+        else if (word == "throttle-") {
             throttle = -1;
         }
-        else if (*it == "mouse+v") {
+        else if (word == "mouse+v") {
             mode = MousePosVert;
         }
-        else if (*it == "mouse-v") {
+        else if (word == "mouse-v") {
             mode = MouseNegVert;
         }
-        else if (*it == "mouse+h") {
+        else if (word == "mouse+h") {
             mode = MousePosHor;
         }
-        else if (*it == "mouse-h") {
+        else if (word == "mouse-h") {
             mode = MouseNegHor;
         }
-        else if (*it == "keyboardandmousehor") {
+        else if (word == "keyboardandmousehor") {
             mode = KeyboardAndMouseHor;
         }
-        else if (*it == "keyboardandmousevert") {
+        else if (word == "keyboardandmousevert") {
             mode = KeyboardAndMouseVert;
         }
-        else if (*it == "keyboardandmouseposhor") {
+        else if (word == "keyboardandmouseposhor") {
             mode = KeyboardAndMousePosHor;
         }
-        else if (*it == "keyboardandmouseneghor") {
+        else if (word == "keyboardandmouseneghor") {
             mode = KeyboardAndMouseNegHor;
         }
-        else if (*it == "keyboardandmouseposvert") {
+        else if (word == "keyboardandmouseposvert") {
             mode = KeyboardAndMousePosVert;
         }
-        else if (*it == "keyboardandmousenegvert") {
+        else if (word == "keyboardandmousenegvert") {
             mode = KeyboardAndMouseNegVert;
+        }
+        else {
+            // Nieznane słowo - zamiast zwracać false, tylko ignoruj i kontynuuj
+            // Możesz też wyświetlić debug info, jeśli chcesz:
+            // qDebug() << "Unrecognized token in axis config:" << word;
         }
     }
 
@@ -161,13 +173,14 @@ bool Axis::read(QTextStream &stream) {
     return true;
 }
 
+
 void Axis::timerCalled() {
     timerTick(++tick);
 }
 
 void Axis::write(QTextStream &stream) {
     // zapis zwykłych parametrów osi:
-    stream << "Axis " << index << ": ";
+    stream << "Axis " << (index + 1) << ": ";
 
     switch (interpretation) {
     case ZeroOne:
