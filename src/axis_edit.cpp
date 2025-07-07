@@ -3,7 +3,6 @@
 
 AxisEdit::AxisEdit( Axis* ax )
         :QDialog() {
-    //build the dialog, display current axis settings  :)
     axis = ax;
     setWindowTitle("Set " + axis->getName());
     setWindowIcon(QPixmap(QJOYPAD_ICON24));
@@ -31,13 +30,10 @@ AxisEdit::AxisEdit( Axis* ax )
     cmbMode->insertItem((int) Axis::MouseNegVert, tr("Mouse (Vert. Rev.)"), Qt::DisplayRole);
     cmbMode->insertItem((int) Axis::MousePosHor, tr("Mouse (Hor.)"), Qt::DisplayRole);
     cmbMode->insertItem((int) Axis::MouseNegHor, tr("Mouse (Hor. Rev.)"), Qt::DisplayRole);
-    // Dodane nowe tryby Keyboard + Mouse
     cmbMode->insertItem((int) Axis::KeyboardAndMouseHor, tr("Keyboard + Mouse (Hor.)"), Qt::DisplayRole);
+    cmbMode->insertItem((int) Axis::KeyboardAndMouseHorRev, tr("Keyboard + Mouse (Hor. Rev.)"), Qt::DisplayRole);
     cmbMode->insertItem((int) Axis::KeyboardAndMouseVert, tr("Keyboard + Mouse (Vert.)"), Qt::DisplayRole);
-    cmbMode->insertItem((int) Axis::KeyboardAndMousePosHor, tr("Keyboard + Mouse (Hor. Pos)"), Qt::DisplayRole);
-    cmbMode->insertItem((int) Axis::KeyboardAndMouseNegHor, tr("Keyboard + Mouse (Hor. Neg)"), Qt::DisplayRole);
-    cmbMode->insertItem((int) Axis::KeyboardAndMousePosVert, tr("Keyboard + Mouse (Vert. Pos)"), Qt::DisplayRole);
-    cmbMode->insertItem((int) Axis::KeyboardAndMouseNegVert, tr("Keyboard + Mouse (Vert. Neg)"), Qt::DisplayRole);
+    cmbMode->insertItem((int) Axis::KeyboardAndMouseVertRev, tr("Keyboard + Mouse (Vert. Rev.)"), Qt::DisplayRole);
 
     cmbMode->setCurrentIndex( axis->mode );
     connect(cmbMode, SIGNAL(activated(int)), this, SLOT( modeChanged( int )));
@@ -146,11 +142,9 @@ void AxisEdit::modeChanged( int index ) {
             keyBox->setEnabled(true);
             break;
         case Axis::KeyboardAndMouseHor:
+        case Axis::KeyboardAndMouseHorRev:
         case Axis::KeyboardAndMouseVert:
-        case Axis::KeyboardAndMousePosHor:
-        case Axis::KeyboardAndMouseNegHor:
-        case Axis::KeyboardAndMousePosVert:
-        case Axis::KeyboardAndMouseNegVert:
+        case Axis::KeyboardAndMouseVertRev:
             mouseBox->setEnabled(true);
             keyBox->setEnabled(true);
             if ((Axis::Interpretation)chkGradient->currentIndex() != Axis::ZeroOne) {

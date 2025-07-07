@@ -149,17 +149,11 @@ bool Axis::read(QTextStream &stream) {
         else if (word == "keyboardandmousevert") {
             mode = KeyboardAndMouseVert;
         }
-        else if (word == "keyboardandmouseposhor") {
-            mode = KeyboardAndMousePosHor;
+        else if (word == "keyboardandmousehorrev") {
+            mode = KeyboardAndMouseHorRev;
         }
-        else if (word == "keyboardandmouseneghor") {
-            mode = KeyboardAndMouseNegHor;
-        }
-        else if (word == "keyboardandmouseposvert") {
-            mode = KeyboardAndMousePosVert;
-        }
-        else if (word == "keyboardandmousenegvert") {
-            mode = KeyboardAndMouseNegVert;
+        else if (word == "keyboardandmousevertrev") {
+            mode = KeyboardAndMouseVertRev;
         }
         else {
             // Nieznane słowo - zamiast zwracać false, tylko ignoruj i kontynuuj
@@ -205,10 +199,8 @@ void Axis::write(QTextStream &stream) {
     if (mode == Keyboard ||
         mode == KeyboardAndMouseHor ||
         mode == KeyboardAndMouseVert ||
-        mode == KeyboardAndMousePosHor ||
-        mode == KeyboardAndMouseNegHor ||
-        mode == KeyboardAndMousePosVert ||
-        mode == KeyboardAndMouseNegVert) {
+        mode == KeyboardAndMouseHorRev ||
+        mode == KeyboardAndMouseVertRev) {
         
         stream << ", " 
                << (puseMouse ? "+mouse " : "+key ") << pkeycode << ", "
@@ -238,17 +230,11 @@ void Axis::write(QTextStream &stream) {
         case KeyboardAndMouseVert:
             stream << ", keyboardandmousevert";
             break;
-        case KeyboardAndMousePosHor:
-            stream << ", keyboardandmouseposhor";
+        case KeyboardAndMouseHorRev:
+            stream << ", keyboardandmousehorrev";
             break;
-        case KeyboardAndMouseNegHor:
-            stream << ", keyboardandmouseneghor";
-            break;
-        case KeyboardAndMousePosVert:
-            stream << ", keyboardandmouseposvert";
-            break;
-        case KeyboardAndMouseNegVert:
-            stream << ", keyboardandmousenegvert";
+        case KeyboardAndMouseVertRev:
+            stream << ", keyboardandmousevertrev";
             break;
     }
 
@@ -425,10 +411,8 @@ void Axis::move(bool press) {
         mode == Keyboard ||
         mode == KeyboardAndMouseHor ||
         mode == KeyboardAndMouseVert ||
-        mode == KeyboardAndMousePosHor ||
-        mode == KeyboardAndMouseNegHor ||
-        mode == KeyboardAndMousePosVert ||
-        mode == KeyboardAndMouseNegVert
+        mode == KeyboardAndMouseHorRev ||
+        mode == KeyboardAndMouseVertRev
     ) {
         // obsługa klawiszy:
         if (isDown == press && mode == Keyboard) return; // zapobiega powtórzeniom
@@ -528,18 +512,19 @@ void Axis::move(bool press) {
                 case MouseNegHor:
                     e.move.x = -dist;
                     break;
-                case KeyboardAndMouseHor:
-                case KeyboardAndMousePosHor:
-                case KeyboardAndMouseNegHor:
-                    // poziomy ruch myszy (kierunek uwzględniony w dist)
-                    e.move.x = dist;
-                    break;
-                case KeyboardAndMouseVert:
-                case KeyboardAndMousePosVert:
-                case KeyboardAndMouseNegVert:
-                    // pionowy ruch myszy
-                    e.move.y = dist;
-                    break;
+                    case KeyboardAndMouseHor:
+                        e.move.x = dist;
+                        break;
+                    case KeyboardAndMouseHorRev:
+                        e.move.x = -dist;
+                        break;
+                    case KeyboardAndMouseVert:
+                        e.move.y = dist;
+                        break;
+                    case KeyboardAndMouseVertRev:
+                        e.move.y = -dist;
+                        break;
+
                 default:
                     break;
             }
