@@ -1,19 +1,12 @@
 #include "config.h"
 #include "axis_edit.h"
 
-
 AxisEdit::AxisEdit( Axis* ax )
         :QDialog() {
     //build the dialog, display current axis settings  :)
     axis = ax;
     setWindowTitle("Set " + axis->getName());
     setWindowIcon(QPixmap(QJOYPAD_ICON24));
-
-    //h, v, and v2 are all references to layouts. They are used to refer to
-    //various layouts as the dialog is built and are not pointing to the same
-    //thing throughout. This is just because I don't care about the layouts
-    //after I have placed the widgets within them and there's no reasno to
-    //keep track of them.
 
     QVBoxLayout* v = new QVBoxLayout(this);
     v->setMargin(5);
@@ -23,6 +16,7 @@ AxisEdit::AxisEdit( Axis* ax )
     QVBoxLayout* v2 = new QVBoxLayout();
     v2->setMargin(5);
     v2->setSpacing(5);
+
     chkGradient = new QComboBox(this);
     chkGradient->insertItem((int) Axis::ZeroOne, tr("Use 0 or max always"), Qt::DisplayRole);
     chkGradient->insertItem((int) Axis::Gradient, tr("Relative movement (previously gradient)"), Qt::DisplayRole);
@@ -37,9 +31,18 @@ AxisEdit::AxisEdit( Axis* ax )
     cmbMode->insertItem((int) Axis::MouseNegVert, tr("Mouse (Vert. Rev.)"), Qt::DisplayRole);
     cmbMode->insertItem((int) Axis::MousePosHor, tr("Mouse (Hor.)"), Qt::DisplayRole);
     cmbMode->insertItem((int) Axis::MouseNegHor, tr("Mouse (Hor. Rev.)"), Qt::DisplayRole);
+    // Dodane nowe tryby Keyboard + Mouse
+    cmbMode->insertItem((int) Axis::KeyboardAndMouseHor, tr("Keyboard + Mouse (Hor.)"), Qt::DisplayRole);
+    cmbMode->insertItem((int) Axis::KeyboardAndMouseVert, tr("Keyboard + Mouse (Vert.)"), Qt::DisplayRole);
+    cmbMode->insertItem((int) Axis::KeyboardAndMousePosHor, tr("Keyboard + Mouse (Hor. Pos)"), Qt::DisplayRole);
+    cmbMode->insertItem((int) Axis::KeyboardAndMouseNegHor, tr("Keyboard + Mouse (Hor. Neg)"), Qt::DisplayRole);
+    cmbMode->insertItem((int) Axis::KeyboardAndMousePosVert, tr("Keyboard + Mouse (Vert. Pos)"), Qt::DisplayRole);
+    cmbMode->insertItem((int) Axis::KeyboardAndMouseNegVert, tr("Keyboard + Mouse (Vert. Neg)"), Qt::DisplayRole);
+
     cmbMode->setCurrentIndex( axis->mode );
     connect(cmbMode, SIGNAL(activated(int)), this, SLOT( modeChanged( int )));
     v2->addWidget(cmbMode);
+
     cmbTransferCurve = new QComboBox(this);
     cmbTransferCurve->insertItem(Axis::Linear, tr("Linear"), Qt::DisplayRole);
     cmbTransferCurve->insertItem(Axis::Quadratic, tr("Quadratic"), Qt::DisplayRole );
@@ -50,6 +53,7 @@ AxisEdit::AxisEdit( Axis* ax )
     cmbTransferCurve->setEnabled(axis->gradient);
     connect(cmbTransferCurve, SIGNAL(activated(int)), this, SLOT( transferCurveChanged( int )));
     v2->addWidget(cmbTransferCurve);
+
     h->addLayout(v2);
 
     mouseBox = new QFrame(this);
@@ -57,7 +61,6 @@ AxisEdit::AxisEdit( Axis* ax )
     v2 = new QVBoxLayout(mouseBox);
     v2->setSpacing(5);
     v2->setMargin(5);
-    //v2->setAutoAdd(true);
     QLabel *mouseLabel = new QLabel(tr("&Mouse Speed"), mouseBox);
     v2->addWidget(mouseLabel);
     spinSpeed = new QSpinBox(mouseBox);
@@ -75,6 +78,7 @@ AxisEdit::AxisEdit( Axis* ax )
     h->addWidget(mouseBox);
     mouseLabel->setBuddy(spinSpeed);
     lblSensitivity->setBuddy(spinSensitivity);
+
     v->addLayout(h);
 
     slider = new JoySlider(axis->dZone, axis->xZone, axis->state, this);
@@ -85,7 +89,7 @@ AxisEdit::AxisEdit( Axis* ax )
     h = new QHBoxLayout(keyBox);
     h->setSpacing(5);
     h->setMargin(5);
-    //h->setAutoAdd(true);
+
     btnNeg = new KeyButton(axis->getName(),axis->nkeycode,keyBox,true,axis->nuseMouse);
 
     cmbThrottle = new QComboBox(keyBox);
@@ -96,9 +100,11 @@ AxisEdit::AxisEdit( Axis* ax )
     connect( cmbThrottle, SIGNAL( activated( int )), this, SLOT( throttleChanged( int )));
 
     btnPos = new KeyButton(axis->getName(),axis->pkeycode,keyBox,true,axis->puseMouse);
+
     h->addWidget(btnNeg);
     h->addWidget(cmbThrottle);
     h->addWidget(btnPos);
+
     v->addWidget( keyBox );
 
     QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, this);
@@ -120,39 +126,55 @@ void AxisEdit::show() {
 void AxisEdit::setState( int val ) {
     slider->setValue( val );
 }
+
 void AxisEdit::gradientChanged( int index ) {
     bool gradient = index != Axis::ZeroOne;
     cmbTransferCurve->setEnabled(gradient);
-	if (gradient) {
+    if (gradient) {
         transferCurveChanged( axis->transferCurve );
-	}
-	else {
+    }
+    else {
         lblSensitivity->setEnabled(false);
         spinSensitivity->setEnabled(false);
-	}
+    }
 }
 
 void AxisEdit::modeChanged( int index ) {
-    if (index == Axis::Keyboard) {
-        mouseBox->setEnabled(false);
-        keyBox->setEnabled(true);
+    switch ((Axis::Mode)index) {
+        case Axis::Keyboard:
+            mouseBox->setEnabled(false);
+            keyBox->setEnabled(true);
+            break;
+        case Axis::KeyboardAndMouseHor:
+        case Axis::KeyboardAndMouseVert:
+        case Axis::KeyboardAndMousePosHor:
+        case Axis::KeyboardAndMouseNegHor:
+        case Axis::KeyboardAndMousePosVert:
+        case Axis::KeyboardAndMouseNegVert:
+            mouseBox->setEnabled(true);
+            keyBox->setEnabled(true);
+            if ((Axis::Interpretation)chkGradient->currentIndex() != Axis::ZeroOne) {
+                cmbTransferCurve->setEnabled(true);
+                transferCurveChanged(axis->transferCurve);
+            }
+            break;
+        default:
+            mouseBox->setEnabled(true);
+            keyBox->setEnabled(false);
+            if ((Axis::Interpretation)chkGradient->currentIndex() != Axis::ZeroOne) {
+                cmbTransferCurve->setEnabled(true);
+                transferCurveChanged(axis->transferCurve);
+            }
+            break;
     }
-    else {
-        mouseBox->setEnabled(true);
-        keyBox->setEnabled(false);
-        if ((Axis::Interpretation)chkGradient->currentIndex() != Axis::ZeroOne) {
-            cmbTransferCurve->setEnabled(true);
-            transferCurveChanged( axis->transferCurve );
-		}
-	}
 }
 
 void AxisEdit::transferCurveChanged( int index ) {
     if (index == Axis::PowerFunction) {
         lblSensitivity->setEnabled(true);
         spinSensitivity->setEnabled(true);
-	}
-	else {
+    }
+    else {
         lblSensitivity->setEnabled(false);
         spinSensitivity->setEnabled(false);
     }

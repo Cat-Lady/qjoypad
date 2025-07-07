@@ -3,12 +3,10 @@
 #include "time.h"
 
 #define sqr(a) ((a)*(a))
-#define cub(a)	((a)*(a)*(a))
-#define clamp(a, a_low, a_high)	\
-	((a) < (a_low) ? (a_low) : (a) > (a_high) ? (a_high) : (a))
+#define cub(a) ((a)*(a)*(a))
+#define clamp(a, a_low, a_high) ((a) < (a_low) ? (a_low) : (a) > (a_high) ? (a_high) : (a))
 
-
-Axis::Axis( int i, QObject *parent ) : QObject(parent) {
+Axis::Axis(int i, QObject *parent) : QObject(parent) {
     index = i;
     isOn = false;
     isDown = false;
@@ -21,85 +19,78 @@ Axis::Axis( int i, QObject *parent ) : QObject(parent) {
     tick = 0;
 }
 
-
 Axis::~Axis() {
     release();
 }
 
-bool Axis::read( QTextStream &stream ) {
-//	At this point, toDefault has just been called.
-
-    //read in a line from the stream, and split it up into individual words
+bool Axis::read(QTextStream &stream) {
     QString input = stream.readLine().toLower();
     QRegExp regex("[\\s,]+");
     QStringList words = input.split(regex);
 
-    //used to assure QString->int conversions worked
     bool ok;
-    //int to store values derived from strings
     int val;
     float fval;
-    //step through each word, check if it's a token we recognize
-    for ( QStringList::Iterator it = words.begin(); it != words.end(); ++it ) {
-        if (*it == "maxspeed") {
-            ++it; //move to the next word, which should be the maximum speed.
-            //if no value was given, there's an error in the file, stop reading.
+
+    for (QStringList::Iterator it = words.begin(); it != words.end(); ++it) {
+        QString word = *it;
+
+        // Usuń dwukropki na końcu tokenów (np. "axis", "3:")
+        if (word.endsWith(":")) {
+            word.chop(1);
+        }
+
+        if (word == "maxspeed") {
+            ++it;
             if (it == words.end()) return false;
-            //try to convert the value.
             val = (*it).toInt(&ok);
-            //if that worked and the maximum speed is in range, set it.
             if (ok && val >= 0 && val <= MAXMOUSESPEED) maxSpeed = val;
-            //otherwise, faulty input, give up.
             else return false;
         }
-        //pretty much the same process for getting the dead zone
-        else if (*it == "dzone") {
+        else if (word == "dzone") {
             ++it;
             if (it == words.end()) return false;
             val = (*it).toInt(&ok);
             if (ok && val >= 0 && val <= JOYMAX) dZone = val;
             else return false;
         }
-        //and again for the extreme zone,
-        else if (*it == "xzone") {
+        else if (word == "xzone") {
             ++it;
             if (it == words.end()) return false;
             val = (*it).toInt(&ok);
             if (ok && val >= 0 && val <= JOYMAX) xZone = val;
             else return false;
         }
-		else if (*it == "tcurve") {
-			++it;
-			if (it == words.end()) return false;
-			val = (*it).toInt(&ok);
+        else if (word == "tcurve") {
+            ++it;
+            if (it == words.end()) return false;
+            val = (*it).toInt(&ok);
             if (ok && val >= 0 && val <= PowerFunction) transferCurve = val;
-			else return false;
-		}
-		else if (*it == "sens") {
-			++it;
-			if (it == words.end()) return false;
-			fval = (*it).toFloat(&ok);
-			if (ok && fval >= SENSITIVITY_MIN && fval <= SENSITIVITY_MAX)
-				sensitivity = fval;
-			else return false;
-		}
-        //and for the positive keycode,
-        else if (*it == "+key") {
+            else return false;
+        }
+        else if (word == "sens") {
+            ++it;
+            if (it == words.end()) return false;
+            fval = (*it).toFloat(&ok);
+            if (ok && fval >= SENSITIVITY_MIN && fval <= SENSITIVITY_MAX)
+                sensitivity = fval;
+            else return false;
+        }
+        else if (word == "+key") {
             ++it;
             if (it == words.end()) return false;
             val = (*it).toInt(&ok);
             if (ok && val >= 0 && val <= MAXKEY) pkeycode = val;
             else return false;
         }
-        //and finally for the negative keycode.
-        else if (*it == "-key") {
+        else if (word == "-key") {
             ++it;
             if (it == words.end()) return false;
             val = (*it).toInt(&ok);
             if (ok && val >= 0 && val <= MAXKEY) nkeycode = val;
             else return false;
         }
-        else if (*it == "+mouse") {
+        else if (word == "+mouse") {
             ++it;
             if (it == words.end()) return false;
             val = (*it).toInt(&ok);
@@ -109,7 +100,7 @@ bool Axis::read( QTextStream &stream ) {
             }
             else return false;
         }
-        else if (*it == "-mouse") {
+        else if (word == "-mouse") {
             ++it;
             if (it == words.end()) return false;
             val = (*it).toInt(&ok);
@@ -119,107 +110,167 @@ bool Axis::read( QTextStream &stream ) {
             }
             else return false;
         }
-        //the rest of the options are keywords without integers
-        else if (*it == "zeroone") {
-	    interpretation = ZeroOne;
+        else if (word == "zeroone") {
+            interpretation = ZeroOne;
             gradient = false;
             absolute = false;
-	}
-        else if (*it == "absolute") {
+        }
+        else if (word == "absolute") {
             interpretation = AbsolutePos;
             gradient = true;
             absolute = true;
-	}
-        else if (*it == "gradient") {
+        }
+        else if (word == "gradient") {
             interpretation = Gradient;
             gradient = true;
             absolute = false;
         }
-        else if (*it == "throttle+") {
+        else if (word == "throttle+") {
             throttle = 1;
         }
-        else if (*it == "throttle-") {
+        else if (word == "throttle-") {
             throttle = -1;
         }
-        else if (*it == "mouse+v") {
+        else if (word == "mouse+v") {
             mode = MousePosVert;
         }
-        else if (*it == "mouse-v") {
+        else if (word == "mouse-v") {
             mode = MouseNegVert;
         }
-        else if (*it == "mouse+h") {
+        else if (word == "mouse+h") {
             mode = MousePosHor;
         }
-        else if (*it == "mouse-h") {
+        else if (word == "mouse-h") {
             mode = MouseNegHor;
         }
-        //we ignore unrecognized words to be friendly and allow for additions to
-        //the format in later versions. Note, this means that typos will not get
-        //the desired effect OR produce an error message.
+        else if (word == "keyboardandmousehor") {
+            mode = KeyboardAndMouseHor;
+        }
+        else if (word == "keyboardandmousevert") {
+            mode = KeyboardAndMouseVert;
+        }
+        else if (word == "keyboardandmouseposhor") {
+            mode = KeyboardAndMousePosHor;
+        }
+        else if (word == "keyboardandmouseneghor") {
+            mode = KeyboardAndMouseNegHor;
+        }
+        else if (word == "keyboardandmouseposvert") {
+            mode = KeyboardAndMousePosVert;
+        }
+        else if (word == "keyboardandmousenegvert") {
+            mode = KeyboardAndMouseNegVert;
+        }
+        else {
+            // Nieznane słowo - zamiast zwracać false, tylko ignoruj i kontynuuj
+            // Możesz też wyświetlić debug info, jeśli chcesz:
+            // qDebug() << "Unrecognized token in axis config:" << word;
+        }
     }
 
-    //assume that xZone, dZone, or maxSpeed has changed, for simplicity.
-    //do a few floating point calculations.
     adjustGradient();
 
-    //if we parsed through all of the words, yay! All done.
     return true;
 }
+
 
 void Axis::timerCalled() {
     timerTick(++tick);
 }
 
-void Axis::write( QTextStream &stream ) {
-    stream << "\tAxis " << (index+1) << ": ";
-    stream << ((interpretation == ZeroOne)?"ZeroOne":
-               (interpretation == Gradient)?"Gradient":"Absolute") << ", ";
-    if (throttle > 0) stream << "throttle+, ";
-    else if (throttle < 0) stream << "throttle-, ";
-    if (dZone != DZONE) stream << "dZone " << dZone << ", ";
-    if (xZone != XZONE) stream << "xZone " << xZone << ", ";
-    if (mode == Keyboard) {
-        stream
-            << (puseMouse ? "+mouse " : "+key ") << pkeycode << ", "
-            << (nuseMouse ? "-mouse " : "-key ") << nkeycode << "\n";
-    }
-    else {
-        if (gradient) stream << "maxSpeed " << maxSpeed << ", ";
-        if (transferCurve != Quadratic)
-			stream << "tCurve " << transferCurve << ", ";
-		if (sensitivity != 1.0F)
-			stream << "sens " << sensitivity << ", ";
-        stream << "mouse";
-        if (mode == MousePosVert)
-            stream << "+v\n";
-        else if (mode == MouseNegVert)
-            stream << "-v\n";
-        else if (mode == MousePosHor)
-            stream << "+h\n";
-        else if (mode == MouseNegHor)
-            stream << "-h\n";
+void Axis::write(QTextStream &stream) {
+    // zapis zwykłych parametrów osi:
+    stream << "Axis " << (index + 1) << ": ";
+
+    switch (interpretation) {
+    case ZeroOne:
+        stream << "ZeroOne, ";
+        break;
+    case Gradient:
+        stream << "Gradient, ";
+        break;
+    case AbsolutePos:
+        stream << "Absolute, ";
+        break;
     }
 
+    stream << "dZone " << dZone << ", "
+           << "xZone " << xZone << ", "
+           << "maxSpeed " << maxSpeed << ", "
+           << "tCurve " << transferCurve;
+
+    // dopiszemy klawisze i tryb, jeśli pasują
+
+    // Zapis klawiszy +key / -key albo +mouse / -mouse dla trybów klawiatury i klawiatura+mysz
+    if (mode == Keyboard ||
+        mode == KeyboardAndMouseHor ||
+        mode == KeyboardAndMouseVert ||
+        mode == KeyboardAndMousePosHor ||
+        mode == KeyboardAndMouseNegHor ||
+        mode == KeyboardAndMousePosVert ||
+        mode == KeyboardAndMouseNegVert) {
+        
+        stream << ", " 
+               << (puseMouse ? "+mouse " : "+key ") << pkeycode << ", "
+               << (nuseMouse ? "-mouse " : "-key ") << nkeycode;
+    }
+
+    // Zapis trybu w postaci nazwy (do łatwego odczytu)
+    switch (mode) {
+        case Keyboard:
+            stream << ", keyboard";
+            break;
+        case MousePosVert:
+            stream << ", mouseposvert";
+            break;
+        case MouseNegVert:
+            stream << ", mousenegvert";
+            break;
+        case MousePosHor:
+            stream << ", mouseposhor";
+            break;
+        case MouseNegHor:
+            stream << ", mouseneghor";
+            break;
+        case KeyboardAndMouseHor:
+            stream << ", keyboardandmousehor";
+            break;
+        case KeyboardAndMouseVert:
+            stream << ", keyboardandmousevert";
+            break;
+        case KeyboardAndMousePosHor:
+            stream << ", keyboardandmouseposhor";
+            break;
+        case KeyboardAndMouseNegHor:
+            stream << ", keyboardandmouseneghor";
+            break;
+        case KeyboardAndMousePosVert:
+            stream << ", keyboardandmouseposvert";
+            break;
+        case KeyboardAndMouseNegVert:
+            stream << ", keyboardandmousenegvert";
+            break;
+    }
+
+    stream << "\n";
 }
 
+
 void Axis::release() {
-    //if we're pressing a key, let it go.
     if (isDown) {
         move(false);
         isDown = false;
     }
 }
 
-void Axis::jsevent( int value ) {
-    //adjust real value to throttle value
+void Axis::jsevent(int value) {
     if (throttle == 0)
         state = value;
     else if (throttle == -1)
         state = (value + JOYMIN) / 2;
     else
         state = (value + JOYMAX) / 2;
-    //set isOn, deal with state changing.
-    //if was on but now should be off:
+
     if (isOn && abs(state) <= dZone) {
         isOn = false;
         if (gradient) {
@@ -230,7 +281,6 @@ void Axis::jsevent( int value ) {
             tick = 0;
         }
     }
-    //if was off but now should be on:
     else if (!isOn && abs(state) >= dZone) {
         isOn = true;
         if (gradient) {
@@ -239,11 +289,8 @@ void Axis::jsevent( int value ) {
             timer.start(MSEC);
         }
     }
-    //otherwise, state doesn't change! Don't touch it.
     else return;
 
-    //gradient will trigger movement on its own via timer().
-    //non-gradient needs to be told to move.
     if (!gradient) {
         move(isOn);
     }
@@ -257,7 +304,7 @@ void Axis::toDefault() {
     throttle = 0;
     maxSpeed = 100;
     transferCurve = Quadratic;
-	sensitivity = 1.0F;
+    sensitivity = 1.0F;
     dZone = DZONE;
     tick = 0;
     xZone = XZONE;
@@ -283,14 +330,14 @@ bool Axis::isDefault() {
            (pkeycode == 0) &&
            (nkeycode == 0) &&
            (puseMouse == false) &&
-           (nuseMouse == false) ;
+           (nuseMouse == false);
 }
 
 QString Axis::getName() {
-    return tr("Axis %1").arg(index+1);
+    return tr("Axis %1").arg(index + 1);
 }
 
-bool Axis::inDeadZone( int val ) {
+bool Axis::inDeadZone(int val) {
     int value;
     if (throttle == 0)
         value = val;
@@ -340,13 +387,11 @@ void Axis::setKey(bool useMouse, bool positive, int value) {
     }
 }
 
-void Axis::timerTick( int tick ) {
+void Axis::timerTick(int tick) {
     if (isOn) {
         if (mode == Keyboard) {
-            if (tick % FREQ == 0)
-            {
-                if (duration == FREQ)
-                {
+            if (tick % FREQ == 0) {
+                if (duration == FREQ) {
                     if (!isDown) move(true);
                     duration = (abs(state) * FREQ) / JOYMAX;
                     return;
@@ -365,95 +410,208 @@ void Axis::timerTick( int tick ) {
 }
 
 void Axis::adjustGradient() {
-	inverseRange = 1.0F / (xZone - dZone);
-	// This is also the convenient spot to initialize the dithering
-	// accmulator.
+    inverseRange = 1.0F / (xZone - dZone);
     sumDist = 0;
 }
 
-void Axis::move( bool press ) {
+void Axis::move(bool press) {
     FakeEvent e;
-    if (mode == Keyboard) {
-        //prevent KeyPress-KeyPress and KeyRelease-KeyRelease pairs.
-        //this would only happen in odd circumstances involving the setup
-        //dialog being open and blocking events from happening.
-        if (isDown == press) return;
-        isDown = press;
-        if (state != 0) {
-            useMouse = (state > 0) ? puseMouse : nuseMouse;
-        }
-        if (press) {
-            e.type = useMouse ? FakeEvent::MouseDown : FakeEvent::KeyDown;
-            downkey = (state > 0) ? pkeycode : nkeycode;
+
+    // Obsługa klawiatury i myszy równolegle w trybach KeyboardAndMouse*
+//    bool mouseMoveActive = false;
+    bool keyboardPress = false;
+
+    if (
+        mode == Keyboard ||
+        mode == KeyboardAndMouseHor ||
+        mode == KeyboardAndMouseVert ||
+        mode == KeyboardAndMousePosHor ||
+        mode == KeyboardAndMouseNegHor ||
+        mode == KeyboardAndMousePosVert ||
+        mode == KeyboardAndMouseNegVert
+    ) {
+        // obsługa klawiszy:
+        if (isDown == press && mode == Keyboard) return; // zapobiega powtórzeniom
+        if (mode == Keyboard) {
+            if (state != 0) {
+                useMouse = (state > 0) ? puseMouse : nuseMouse;
+            }
+            if (press) {
+                e.type = useMouse ? FakeEvent::MouseDown : FakeEvent::KeyDown;
+                downkey = (state > 0) ? pkeycode : nkeycode;
+            }
+            else {
+                e.type = useMouse ? FakeEvent::MouseUp : FakeEvent::KeyUp;
+            }
+            e.keycode = downkey;
+            sendevent(e);
+            isDown = press;
+            return;
         }
         else {
-            e.type = useMouse ? FakeEvent::MouseUp : FakeEvent::KeyUp;
+            // Tryby KeyboardAndMouse* - ruch myszy + klawisze
+            keyboardPress = press && (abs(state) >= xZone);
+
+            // Obsługa klawiszy:
+            if (keyboardPress) {
+                // jeśli klawisz nie jest wciśnięty, naciśnij
+                if (!isDown) {
+                    e.type = ( (state > 0) ? (puseMouse ? FakeEvent::MouseDown : FakeEvent::KeyDown) :
+                              (nuseMouse ? FakeEvent::MouseDown : FakeEvent::KeyDown));
+                    downkey = (state > 0) ? pkeycode : nkeycode;
+                    e.keycode = downkey;
+                    sendevent(e);
+                    isDown = true;
+                }
+            }
+            else {
+                // jeśli klawisz powinien być zwolniony
+                if (isDown) {
+                    e.type = ( (state > 0) ? (puseMouse ? FakeEvent::MouseUp : FakeEvent::KeyUp) :
+                              (nuseMouse ? FakeEvent::MouseUp : FakeEvent::KeyUp));
+                    e.keycode = downkey;
+                    sendevent(e);
+                    isDown = false;
+                }
+            }
+
+            // Obsługa myszy:
+
+            int dist = 0;
+            if (gradient) {
+                const int absState = abs(state);
+                float fdist;
+
+                if (absState >= xZone) fdist = 1.0F;
+                else if (absState <= dZone) fdist = 0.0F;
+                else {
+                    const float u = inverseRange * (absState - dZone);
+                    switch (transferCurve) {
+                    case Quadratic: fdist = sqr(u); break;
+                    case Cubic: fdist = cub(u); break;
+                    case QuadraticExtreme:
+                        fdist = sqr(u);
+                        if (u >= 0.95F) fdist *= 1.5F;
+                        break;
+                    case PowerFunction:
+                        fdist = clamp(powf(u, 1.0F / clamp(sensitivity, 1e-8F, 1e+3F)), 0.0F, 1.0F);
+                        break;
+                    default:
+                        fdist = u;
+                    }
+                }
+                fdist *= maxSpeed;
+                if (state < 0) fdist = -fdist;
+                sumDist += fdist;
+                dist = int(sumDist);
+                sumDist -= dist;
+            }
+            else {
+                dist = (state >= 0) ? maxSpeed : -maxSpeed;
+            }
+
+            e.type = FakeEvent::MouseMove;
+            e.move.x = 0;
+            e.move.y = 0;
+
+            // Ustawienie ruchu myszy w zależności od trybu:
+            switch (mode) {
+                case MousePosVert:
+                    e.move.y = dist;
+                    break;
+                case MouseNegVert:
+                    e.move.y = -dist;
+                    break;
+                case MousePosHor:
+                    e.move.x = dist;
+                    break;
+                case MouseNegHor:
+                    e.move.x = -dist;
+                    break;
+                case KeyboardAndMouseHor:
+                case KeyboardAndMousePosHor:
+                case KeyboardAndMouseNegHor:
+                    // poziomy ruch myszy (kierunek uwzględniony w dist)
+                    e.move.x = dist;
+                    break;
+                case KeyboardAndMouseVert:
+                case KeyboardAndMousePosVert:
+                case KeyboardAndMouseNegVert:
+                    // pionowy ruch myszy
+                    e.move.y = dist;
+                    break;
+                default:
+                    break;
+            }
+
+            if (e.move.x != 0 || e.move.y != 0) {
+                sendevent(e);
+//                mouseMoveActive = true;
+            }
+
+            // Klawiatura została obsłużona powyżej (keyboardPress/isDown)
+
+            return;
         }
-        e.keycode = downkey;
     }
-    //if using the mouse
-    else if (press) {
-        int dist;
+    else if (mode == MousePosVert || mode == MouseNegVert || mode == MousePosHor || mode == MouseNegHor) {
+        // Stare tryby tylko myszy
+        int dist = 0;
+        if (gradient) {
+            const int absState = abs(state);
+            float fdist;
 
- 		if (gradient) {
-			const int absState = abs(state);
-			float fdist;	// Floating point movement distance
-
-			if (absState >= xZone) fdist = 1.0F;
-			else if (absState <= dZone) fdist = 0.0F;
-			else {
-				const float u = inverseRange * (absState - dZone);
-
-				switch(transferCurve) {
-				case Quadratic:
-					fdist = sqr(u);
-					break;
-				case Cubic:
-					fdist = cub(u);
-					break;
-				case QuadraticExtreme:
-					fdist = sqr(u);
-					if(u >= 0.95F) {
-						fdist *= 1.5F;
-					}
-					break;
-				case PowerFunction:
-					fdist = clamp(powf(u, 1.0F / clamp(
-						sensitivity, 1e-8F, 1e+3F)), 0.0F, 1.0F);
-					break;
-				default:
-					fdist = u;
-				}
-			}
-			fdist *= maxSpeed;
-			if (state < 0) fdist = -fdist;
-			// Accumulate the floating point distance and shift the
-			// mouse by the rounded magnitude
-			sumDist += fdist;
-			dist = static_cast<int>(rint(sumDist));
+            if (absState >= xZone) fdist = 1.0F;
+            else if (absState <= dZone) fdist = 0.0F;
+            else {
+                const float u = inverseRange * (absState - dZone);
+                switch (transferCurve) {
+                case Quadratic: fdist = sqr(u); break;
+                case Cubic: fdist = cub(u); break;
+                case QuadraticExtreme:
+                    fdist = sqr(u);
+                    if (u >= 0.95F) fdist *= 1.5F;
+                    break;
+                case PowerFunction:
+                    fdist = clamp(powf(u, 1.0F / clamp(sensitivity, 1e-8F, 1e+3F)), 0.0F, 1.0F);
+                    break;
+                default:
+                    fdist = u;
+                }
+            }
+            fdist *= maxSpeed;
+            if (state < 0) fdist = -fdist;
+            sumDist += fdist;
+            dist = int(sumDist);
             sumDist -= dist;
- 		}
- 		//if not gradient, always go full speed.
- 		else dist = maxSpeed;
- 
- 		e.type = absolute ? FakeEvent::MouseMoveAbsolute : FakeEvent::MouseMove;
- 		if (mode == MousePosVert) {
- 			e.move.x = 0;
- 			e.move.y = dist;
- 		}
- 		else if (mode == MouseNegVert) {
- 			e.move.x = 0;
- 			e.move.y = -dist;
- 		}
- 		else if (mode == MousePosHor) {
- 			e.move.x = dist;
-			e.move.y = 0;
- 		}
- 		else if (mode == MouseNegHor) {
- 			e.move.x = -dist;
-			e.move.y = 0;
-		}
+        }
+        else {
+            dist = (state >= 0) ? maxSpeed : -maxSpeed;
+        }
+
+        FakeEvent e;
+        e.type = FakeEvent::MouseMove;
+        e.move.x = 0;
+        e.move.y = 0;
+
+        switch (mode) {
+            case MousePosVert: e.move.y = dist; break;
+            case MouseNegVert: e.move.y = -dist; break;
+            case MousePosHor: e.move.x = dist; break;
+            case MouseNegHor: e.move.x = -dist; break;
+            default: break;
+        }
+
+        if (e.move.x != 0 || e.move.y != 0)
+            sendevent(e);
     }
-    //actually create the event
-	sendevent(e);
+    else if (mode == Keyboard) {
+        // Stare tryby tylko klawiatury
+        if (isDown == press) return;
+        isDown = press;
+        FakeEvent e;
+        e.type = (useMouse ? (press ? FakeEvent::MouseDown : FakeEvent::MouseUp) : (press ? FakeEvent::KeyDown : FakeEvent::KeyUp));
+        e.keycode = (state > 0) ? pkeycode : nkeycode;
+        sendevent(e);
+    }
 }
