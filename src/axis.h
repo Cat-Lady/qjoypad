@@ -29,10 +29,8 @@ public:
         MouseNegHor,
         KeyboardAndMouseHor,     // nowy tryb poziomego ruchu myszy + klawisze
         KeyboardAndMouseVert,    // nowy tryb pionowego ruchu myszy + klawisze
-        KeyboardAndMousePosHor,  // nowy tryb ruch myszy poziomy + klawisze + kierunek +
-        KeyboardAndMouseNegHor,  // nowy tryb ruch myszy poziomy + klawisze + kierunek -
-        KeyboardAndMousePosVert, // nowy tryb ruch myszy pionowy + klawisze + kierunek +
-        KeyboardAndMouseNegVert  // nowy tryb ruch myszy pionowy + klawisze + kierunek -
+        KeyboardAndMouseHorRev,
+        KeyboardAndMouseVertRev,
     };
 
     enum TransferCurve { Linear, Quadratic, Cubic, QuadraticExtreme, PowerFunction };
